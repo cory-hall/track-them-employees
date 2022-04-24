@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS department;
-DROP TABLE IF EXISTS empRole;
 DROP TABLE IF EXISTS employee;
+DROP TABLE IF EXISTS empRole;
+DROP TABLE IF EXISTS department;
 
 CREATE TABLE department (
    id INTEGER AUTO_INCREMENT PRIMARY KEY,
@@ -9,9 +9,9 @@ CREATE TABLE department (
 
 CREATE TABLE empRole (
    id INTEGER AUTO_INCREMENT PRIMARY KEY,
-   title VARCHAR(30) NOT NULL,
-   salary DECIMAL(7,2),
+   title VARCHAR(30) NOT NULL,   
    department_id INTEGER,
+   salary DECIMAL(10,2),
    CONSTRAINT fk_department FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE SET NULL
 );
 
