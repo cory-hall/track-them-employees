@@ -1,11 +1,8 @@
 const db = require('./db/connection');
 const inquirer = require('inquirer');
+const cTable = require('console.table');
 
-const viewEmployees = require('./lib/employee');
-const viewDepartments = require('./lib/department');
-const viewRoles = require('./lib/role');
-
-let confirmCont = true;
+// const viewRoles = require('./lib/role');
 
 const questions = [
    'View All Employees',
@@ -14,8 +11,11 @@ const questions = [
    'View All Roles',
    'Add Role',
    'View All Departments',
-   'Add Department'
+   'Add Department',
+   'Exit'
 ];
+
+// MAIN USE FUNCTIONS BEGIN //
 
 const init = () => {
    db.connect(err => {
@@ -25,7 +25,7 @@ const init = () => {
    });
 };
 
-function userInput() {
+const userInput = async () => {
    return inquirer.prompt([
       {
          type: 'list',
@@ -39,26 +39,216 @@ function userInput() {
             case 'View All Employees':
                viewEmployees()
                break;
-            // case 'Add Employee':
-            //    addEmployee();
+            case 'Add Employee':
+               addEmployee();
+               break;
             // case 'Update Employee Role':
             //    updateEmployee();
+            //    break;
             case 'View All Roles':
-               viewRoles()
+               viewRoles();
                break;
-            // case 'Add Role':
-            //    addRole();
+            case 'Add Role':
+               addRole();
+               break;
             case 'View All Departments':
                viewDepartments()
                break;
-            // case 'Add Department':
-            //    addDepartment();
+            case 'Add Department':
+               addDepartment();
+               break;
+            case 'Exit':
+               exitApp();
+               break;
+            default:
+               break;
          }
       })
+};
+
+// MAIN USE FUNCTIONS END //
+
+// ROLE FUNCTIONS BEGIN //
+
+const getRoles = () => {
+   const sql = `SELECT * FROM empRole`;
+   const allRoles = [];
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      rows.forEach((element, index) => {
+         allRoles[index] = element;
+      });
+   });
+   console.log(allRoles)
+   return allRoles;
+};
+
+const viewRoles = () => {
+   const sql = `SELECT * FROM empRole`;
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      console.table(rows);
+      userInput();
+   });
+};
+
+const addRole = () => {
+   const allDepts = getAllDepartments();
+   inquirer.prompt([
+      {
+         type: 'input',
+         name: 'newRole',
+         message: 'What role would you like to add?'
+      },
+      {
+         type: 'input',
+         name: 'newSalary',
+         message: 'What is the salary of this new role?'
+      },
+      {
+         type: 'list',
+         name: 'newDept',
+         message: 'Which department does this role belong to?',
+         choices: allDepts
+      }
+   ])
+      .then(data => {
+         let index = allDepts.findIndex(element => {
+            if (element.name === data.newDept) {
+               return true;
+            }
+         })
+         index += 1;
+
+         const sql = `INSERT INTO empRole(title, department_id, salary) VALUES (?,?,?)`;
+         const params = [data.newRole, index, data.newSalary];
+
+         db.query(sql, params, (err, result) => {
+            if (err) throw err;
+         })
+         console.log("New role successfully added.")
+      })
+      .then(() => {
+         userInput();
+      })
 }
+
+// ROLE FUNCTIONS END //
+
+// DEPARTMENT FUNCTIONS BEGIN //
+
+const getAllDepartments = () => {
+   const sql = `SELECT * FROM department`;
+   const allDepts = [];
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      rows.forEach((element, index) => {
+         allDepts[index] = element;
+      });
+   });
+   return allDepts;
+};
+
+const viewDepartments = () => {
+   const sql = `SELECT * FROM department`
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      console.table(rows);
+      userInput();
+   });
+};
+
+const addDepartment = () => {
+   inquirer.prompt([
+      {
+         type: 'input',
+         name: 'newDept',
+         message: 'What is the name of the new department?'
+      }
+   ])
+      .then(data => {
+         const sql = `INSERT INTO department (name) VALUES (?)`;
+         const params = [data.newDept];
+
+         db.query(sql, params, (err, result) => {
+            if (err) throw err;
+         })
+         console.log("New department successfully added.\n")
+      })
+      .then(() => {
+         userInput();
+      })
+}
+
+// DEPARTMENT FUNCTIONS END //
+
+// EMPLOYEE FUNCTIONS BEGIN //
+
+const viewEmployees = () => {
+   const sql = `SELECT employee.id, employee.first_name, employee.last_name,
+                  empRole.title, department.name AS department, empRole.salary
+                  FROM employee
+                  LEFT JOIN empRole
+                  ON employee.role_id = empRole.id
+                  LEFT JOIN department
+                  ON empRole.department_id = department.id`;
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      console.table(rows.slice(0));
+   });
+};
+
+const addEmployee = () => {
+   const allRoles = getRoles();
+
+   console.log(allRoles);
+
+   // inquirer.prompt([
+   //    {
+   //       type: 'input',
+   //       name: 'firstName',
+   //       message: "What is the employee's first name?"
+   //    },
+   //    {
+   //       type: 'input',
+   //       name: 'lastName',
+   //       message: "What is the employee's last name?"
+   //    },
+   //    {
+   //       type: 'list',
+   //       name: 'empRole',
+   //       message: "What is the employee's role?",
+   //       choices: allRoles
+   //    }
+   // ])
+   //    .then(data => {
+   //       let index = allRoles.findIndex(element => {
+   //          if (element.name === data.empRole) {
+   //             return true;
+   //          }
+   //          index += 1;
+   //       })
+   //       const sql = `INSERT INTO employee (first_name, last_name, role_id) VALUES (?,?,?)`;
+   //       const params = [data.firstName, data.lastName, index];
+
+   //       db.query(sql, params, (err, result) => {
+   //          if (err) throw err;
+   //       })
+   //       console.log("New employee successfully added.");
+   //    });
+};
+
+// EMPLOYEE FUNCTIONS END //
 
 init();
 
 module.exports = userInput;
+
+
 
 
