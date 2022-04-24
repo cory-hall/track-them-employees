@@ -5,6 +5,8 @@ const viewEmployees = require('./lib/employee');
 const viewDepartments = require('./lib/department');
 const viewRoles = require('./lib/role');
 
+let confirmCont = true;
+
 const questions = [
    'View All Employees',
    'Add Employee',
@@ -23,7 +25,7 @@ const init = () => {
    });
 };
 
-const userInput = () => {
+function userInput() {
    return inquirer.prompt([
       {
          type: 'list',
@@ -52,9 +54,6 @@ const userInput = () => {
             // case 'Add Department':
             //    addDepartment();
          }
-      })
-      .then(response => {
-         return userInput();
       })
 }
 
