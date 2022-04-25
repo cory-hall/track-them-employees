@@ -2,7 +2,8 @@ const db = require('./db/connection');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 
-
+let allRoles = [];
+let allDepts = [];
 
 const questions = [
    'Get all roles',
@@ -61,9 +62,6 @@ const userInput = async () => {
             case 'Exit':
                exitApp();
                break;
-            case 'Get all roles':
-               getRoles();
-               break;
             default:
                break;
          }
@@ -74,18 +72,17 @@ const userInput = async () => {
 
 // ROLE FUNCTIONS BEGIN //
 
-const getRoles = () => {
+const getRoles = async () => {
    const sql = `SELECT title FROM empRole`;
-   const allRoles = [];
 
-   db.query(sql, (err, rows) => {
-      if (err) throw err;
-      rows.forEach((element, index) => {
-         allRoles.push(element);
-      });
-   });
-   return allRoles;
-};
+   db.promise().query(sql)
+      .then(([rows, fields]) => {
+         rows.forEach(element => {
+            allRoles.push(element.title);
+         })
+      })
+      .catch(console.log)
+}
 
 const viewRoles = () => {
    const sql = `SELECT * FROM empRole`;
@@ -98,7 +95,7 @@ const viewRoles = () => {
 };
 
 const addRole = () => {
-   const allDepts = getAllDepartments();
+   getAllDepartments();
 
    inquirer.prompt([
       {
@@ -143,17 +140,15 @@ const addRole = () => {
 
 // DEPARTMENT FUNCTIONS BEGIN //
 
-const getAllDepartments = () => {
+const getAllDepartments = async () => {
    const sql = `SELECT name FROM department`;
-   const allDepts = [];
 
    db.query(sql, (err, rows) => {
       if (err) throw err;
-      rows.forEach((element, index) => {
+      rows.forEach((element) => {
          allDepts.push(element);
       });
    });
-   return allDepts;
 };
 
 const viewDepartments = () => {
@@ -209,7 +204,7 @@ const viewEmployees = () => {
 };
 
 const addEmployee = () => {
-   const allRoles = getRoles();
+   getRoles();
 
    inquirer.prompt([
       {
@@ -234,8 +229,9 @@ const addEmployee = () => {
             if (element === data.empRole) {
                return true;
             }
-            index += 1;
          })
+         index += 1;
+
          const sql = `INSERT INTO employee (first_name, last_name, role_id) VALUES (?,?,?)`;
          const params = [data.firstName, data.lastName, index];
 
@@ -243,7 +239,10 @@ const addEmployee = () => {
             if (err) throw err;
          })
          console.log("New employee successfully added.");
-      });
+      })
+      .then(() => {
+         userInput();
+      })
 };
 
 // EMPLOYEE FUNCTIONS END //
