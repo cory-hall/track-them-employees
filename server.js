@@ -263,6 +263,7 @@ const updateEmployee = () => {
    const roleQuery = `SELECT * FROM empRole`;
 
    db.query(empQuery, (err, employees) => {
+      if (err) throw err;
       db.query(roleQuery, (err, roles) => {
          if (err) throw err;
 
@@ -271,10 +272,10 @@ const updateEmployee = () => {
                type: 'list',
                name: 'empName',
                message: "Which employee's role do you need to change?",
-               choices: function() {
+               choices: function () {
                   let empArray = [];
-                  employees.forEach((element, index) => {
-                     empArray.push(`${employees[index].first_name} ${employees[index].last_name}`);
+                  employees.forEach(element => {
+                     empArray.push(`${element.first_name} ${element.last_name}`);
                   });
                   return empArray;
                }
@@ -283,36 +284,36 @@ const updateEmployee = () => {
                type: 'list',
                name: 'empRole',
                message: "What is the employee's new role?",
-               choices: function() {
+               choices: function () {
                   let empArray = [];
-                  roles.forEach((element, index) => {
-                     empArray.push(roles[index].title);
+                  roles.forEach(element => {
+                     empArray.push(element.title);
                   });
                   return empArray;
                }
             }
          ])
-         .then ((data) => {
-            roles.forEach((element, index) => {
-               if (roles[index].title === data.empRole) {
-                  data.role_id = roles[index].id;
-               }
-            })
-            employees.forEach((element, index) => {
-               if (`${employees[index].first_name} ${employees[index].last_name}` === data.empName) {
-                  data.id = employees[index].id;
-               }
-            })
+            .then((data) => {
+               roles.forEach(element => {
+                  if (element.title === data.empRole) {
+                     data.role_id = element.id;
+                  }
+               })
+               employees.forEach(element => {
+                  if (`${element.first_name} ${element.last_name}` === data.empName) {
+                     data.id = element.id;
+                  }
+               })
 
-            const sql = `UPDATE employee SET employee.role_id = ${data.role_id}
+               const sql = `UPDATE employee SET employee.role_id = ${data.role_id}
                            WHERE employee.id = ${data.id}`;
 
-            db.query(sql, (err) => {
-               if (err) throw err;
-               console.log(`${data.empName}'s role has been updated. `)
-               userInput();
+               db.query(sql, (err) => {
+                  if (err) throw err;
+                  console.log(`${data.empName}'s role has been updated. `)
+                  userInput();
+               })
             })
-         })
       })
    })
 }
