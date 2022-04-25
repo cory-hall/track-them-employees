@@ -4,9 +4,9 @@ const cTable = require('console.table');
 
 let allRoles = [];
 let allDepts = [];
+let allEmps = [];
 
 const questions = [
-   'Get all roles',
    'View All Employees',
    'Add Employee',
    'Update Employee Role',
@@ -44,9 +44,9 @@ const userInput = async () => {
             case 'Add Employee':
                addEmployee();
                break;
-            // case 'Update Employee Role':
-            //    updateEmployee();
-            //    break;
+            case 'Update Employee Role':
+               updateEmployee();
+               break;
             case 'View All Roles':
                viewRoles();
                break;
@@ -75,13 +75,12 @@ const userInput = async () => {
 const getRoles = async () => {
    const sql = `SELECT title FROM empRole`;
 
-   db.promise().query(sql)
-      .then(([rows, fields]) => {
-         rows.forEach(element => {
-            allRoles.push(element.title);
-         })
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      rows.forEach(element => {
+         allRoles.push(element.title);
       })
-      .catch(console.log)
+   })
 }
 
 const viewRoles = () => {
@@ -187,6 +186,20 @@ const addDepartment = () => {
 
 // EMPLOYEE FUNCTIONS BEGIN //
 
+const getEmployees = async () => {
+   const sql = `SELECT * FROM employee`;
+
+   db.query(sql, (err, rows) => {
+      if (err) throw err;
+      rows.forEach((element) => {
+         let first = element.first_name;
+         let second = element.last_name;
+         let result = first.concat(" ", second);
+         allEmps.push(result);
+      });
+   });
+};
+
 const viewEmployees = () => {
    const sql = `SELECT employee.id, employee.first_name, employee.last_name,
                   empRole.title, department.name AS department, empRole.salary
@@ -244,6 +257,65 @@ const addEmployee = () => {
          userInput();
       })
 };
+
+const updateEmployee = () => {
+   const empQuery = `SELECT * FROM employee`;
+   const roleQuery = `SELECT * FROM empRole`;
+
+   db.query(empQuery, (err, employees) => {
+      db.query(roleQuery, (err, roles) => {
+         if (err) throw err;
+
+         inquirer.prompt([
+            {
+               type: 'list',
+               name: 'empName',
+               message: "Which employee's role do you need to change?",
+               choices: function() {
+                  let empArray = [];
+                  employees.forEach((element, index) => {
+                     empArray.push(`${employees[index].first_name} ${employees[index].last_name}`);
+                  });
+                  return empArray;
+               }
+            },
+            {
+               type: 'list',
+               name: 'empRole',
+               message: "What is the employee's new role?",
+               choices: function() {
+                  let empArray = [];
+                  roles.forEach((element, index) => {
+                     empArray.push(roles[index].title);
+                  });
+                  return empArray;
+               }
+            }
+         ])
+         .then ((data) => {
+            roles.forEach((element, index) => {
+               if (roles[index].title === data.empRole) {
+                  data.role_id = roles[index].id;
+               }
+            })
+            employees.forEach((element, index) => {
+               if (`${employees[index].first_name} ${employees[index].last_name}` === data.empName) {
+                  data.id = employees[index].id;
+               }
+            })
+
+            const sql = `UPDATE employee SET employee.role_id = ${data.role_id}
+                           WHERE employee.id = ${data.id}`;
+
+            db.query(sql, (err) => {
+               if (err) throw err;
+               console.log(`${data.empName}'s role has been updated. `)
+               userInput();
+            })
+         })
+      })
+   })
+}
 
 // EMPLOYEE FUNCTIONS END //
 
