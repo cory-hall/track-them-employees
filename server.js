@@ -1,11 +1,14 @@
+// required libraries
 const db = require('./db/connection');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 
+// global arrays
 let allRoles = [];
 let allDepts = [];
 let allEmps = [];
 
+// main questions
 const questions = [
    'View All Employees',
    'Add Employee',
@@ -19,6 +22,7 @@ const questions = [
 
 // MAIN USE FUNCTIONS BEGIN //
 
+// initial database function
 const init = () => {
    db.connect(err => {
       if (err) throw err;
@@ -27,6 +31,7 @@ const init = () => {
    });
 };
 
+// main question display and inquirer function
 const userInput = async () => {
    return inquirer.prompt([
       {
@@ -36,6 +41,7 @@ const userInput = async () => {
          choices: questions
       }
    ])
+   // switch statement to direct after inquirer prompt
       .then(data => {
          switch (data.userInput) {
             case 'View All Employees':
@@ -68,10 +74,17 @@ const userInput = async () => {
       })
 };
 
+const exitApp = () => {
+   console.log('Goodbye');
+   db.end();
+   process.exit();
+}
+
 // MAIN USE FUNCTIONS END //
 
 // ROLE FUNCTIONS BEGIN //
 
+// get all employee roles
 const getRoles = async () => {
    const sql = `SELECT title FROM empRole`;
 
@@ -83,6 +96,7 @@ const getRoles = async () => {
    })
 }
 
+// view all employee roles in console
 const viewRoles = () => {
    const sql = `SELECT * FROM empRole`;
 
@@ -93,6 +107,7 @@ const viewRoles = () => {
    });
 };
 
+// add an employee role to the database
 const addRole = () => {
    getAllDepartments();
 
@@ -114,6 +129,8 @@ const addRole = () => {
          choices: allDepts
       }
    ])
+   // finding what department the role is in
+   // and add to database
       .then(data => {
          let index = allDepts.findIndex(element => {
             if (element.name === data.newDept) {
@@ -139,6 +156,7 @@ const addRole = () => {
 
 // DEPARTMENT FUNCTIONS BEGIN //
 
+// get all departments
 const getAllDepartments = async () => {
    const sql = `SELECT name FROM department`;
 
@@ -150,6 +168,7 @@ const getAllDepartments = async () => {
    });
 };
 
+// view all departments in console
 const viewDepartments = () => {
    const sql = `SELECT * FROM department`
 
@@ -160,6 +179,7 @@ const viewDepartments = () => {
    });
 };
 
+// add a department to the database
 const addDepartment = () => {
    inquirer.prompt([
       {
@@ -186,20 +206,24 @@ const addDepartment = () => {
 
 // EMPLOYEE FUNCTIONS BEGIN //
 
-const getEmployees = async () => {
-   const sql = `SELECT * FROM employee`;
+// ** couldn't get this one to work
+//    brute forced it where I wanted to apply it **
 
-   db.query(sql, (err, rows) => {
-      if (err) throw err;
-      rows.forEach((element) => {
-         let first = element.first_name;
-         let second = element.last_name;
-         let result = first.concat(" ", second);
-         allEmps.push(result);
-      });
-   });
-};
+// const getEmployees = async () => {
+//    const sql = `SELECT * FROM employee`;
 
+//    db.query(sql, (err, rows) => {
+//       if (err) throw err;
+//       rows.forEach((element) => {
+//          let first = element.first_name;
+//          let second = element.last_name;
+//          let result = first.concat(" ", second);
+//          allEmps.push(result);
+//       });
+//    });
+// };
+
+// view all employees in the console
 const viewEmployees = () => {
    const sql = `SELECT employee.id, employee.first_name, employee.last_name,
                   empRole.title, department.name AS department, empRole.salary
@@ -216,7 +240,9 @@ const viewEmployees = () => {
    });
 };
 
+// add employee to the database
 const addEmployee = () => {
+   // get all roles, save to empRoles global array
    getRoles();
 
    inquirer.prompt([
@@ -237,6 +263,7 @@ const addEmployee = () => {
          choices: allRoles
       }
    ])
+   // determine which role the employee will have
       .then(data => {
          let index = allRoles.findIndex(element => {
             if (element === data.empRole) {
@@ -258,10 +285,12 @@ const addEmployee = () => {
       })
 };
 
+// update employee role
 const updateEmployee = () => {
    const empQuery = `SELECT * FROM employee`;
    const roleQuery = `SELECT * FROM empRole`;
 
+   // access both employee table and employee role table
    db.query(empQuery, (err, employees) => {
       if (err) throw err;
       db.query(roleQuery, (err, roles) => {
@@ -293,12 +322,14 @@ const updateEmployee = () => {
                }
             }
          ])
+         // update role for employee
             .then((data) => {
                roles.forEach(element => {
                   if (element.title === data.empRole) {
                      data.role_id = element.id;
                   }
                })
+               // select the appropriate employee
                employees.forEach(element => {
                   if (`${element.first_name} ${element.last_name}` === data.empName) {
                      data.id = element.id;
