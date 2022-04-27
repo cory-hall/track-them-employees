@@ -74,6 +74,7 @@ const userInput = async () => {
       })
 };
 
+// end the app
 const exitApp = () => {
    console.log('Goodbye');
    db.end();
